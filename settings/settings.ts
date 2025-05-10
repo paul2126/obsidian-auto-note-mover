@@ -3,12 +3,14 @@ import { App, Notice, PluginSettingTab, Setting, ButtonComponent } from 'obsidia
 
 import { FolderSuggest } from 'suggests/file-suggest';
 import { TagSuggest } from 'suggests/tag-suggest';
+import { FrontmatterPropertySuggest, FrontmatterValueSuggest } from 'suggests/frontmatter-suggest';
 import { arrayMove } from 'utils/Utils';
 
 export interface FolderTagPattern {
 	folder: string;
 	tag: string;
-	frontmatterProperty: string;
+	frontmatterPropertyKey: string;
+	frontmatterPropertyValue: string;
 	pattern: string;
 }
 
@@ -29,7 +31,7 @@ export const DEFAULT_SETTINGS: AutoNoteMoverSettings = {
 	trigger_auto_manual: 'Automatic',
 	use_regex_to_check_for_tags: false,
 	statusBar_trigger_indicator: true,
-	folder_tag_pattern: [{ folder: '', tag: '', frontmatterProperty: '', pattern: '' }],
+	folder_tag_pattern: [{ folder: '', tag: '', frontmatterPropertyKey: '', frontmatterPropertyValue: '', pattern: '' }],
 	use_regex_to_check_for_excluded_folder: false,
 	excluded_folder: [{ folder: '' }],
 };
@@ -51,48 +53,12 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 	}
 
 	add_auto_note_mover_setting(): void {
-		this.containerEl.createEl('h2', { text: 'Auto Note Mover' });
 
 		const descEl = document.createDocumentFragment();
 
-		new Setting(this.containerEl).setDesc(
-			'Auto Note Mover will automatically move the active notes to their respective folders according to the rules.'
-		);
-
-		/* new Setting(this.containerEl)
-			.setName('Auto Note Mover')
-			.setDesc('Enable or disable the Auto Note Mover.')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.enable_auto_note_mover)
-					.onChange(async (use_new_auto_note_mover) => {
-						this.plugin.settings.enable_auto_note_mover = use_new_auto_note_mover;
-						await this.plugin.saveSettings();
-						this.display();
-					});
-			});
-
-		if (!this.plugin.settings.enable_auto_note_mover) {
-			return;
-		} */
-
-		const triggerDesc = document.createDocumentFragment();
-		triggerDesc.append(
-			'Choose how the trigger will be activated.',
-			descEl.createEl('br'),
-			descEl.createEl('strong', { text: 'Automatic ' }),
-			'is triggered when you create, edit, or rename a note, and moves the note if it matches the rules.',
-			descEl.createEl('br'),
-			'You can also activate the trigger with a command.',
-			descEl.createEl('br'),
-			descEl.createEl('strong', { text: 'Manual ' }),
-			'will not automatically move notes.',
-			descEl.createEl('br'),
-			'You can trigger by command.'
-		);
 		new Setting(this.containerEl)
 			.setName('Trigger')
-			.setDesc(triggerDesc)
+			.setDesc('Choose how the trigger will be activated.')
 			.addDropdown((dropDown) =>
 				dropDown
 					.addOption('Automatic', 'Automatic')
@@ -105,22 +71,9 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 					})
 			);
 
-		const useRegexToCheckForTags = document.createDocumentFragment();
-		useRegexToCheckForTags.append(
-			'If enabled, tags will be checked with regular expressions.',
-			descEl.createEl('br'),
-			'For example, if you want to match the #tag, you would write ',
-			descEl.createEl('strong', { text: '^#tag$' }),
-			descEl.createEl('br'),
-			'This setting is for a specific purpose, such as specifying nested tags in bulk.',
-			descEl.createEl('br'),
-			descEl.createEl('strong', {
-				text: 'If you want to use the suggested tags as they are, it is recommended to disable this setting.',
-			})
-		);
 		new Setting(this.containerEl)
 			.setName('Use regular expressions to check for tags')
-			.setDesc(useRegexToCheckForTags)
+			.setDesc('If enabled, tags will be checked with regular expressions.')
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.use_regex_to_check_for_tags).onChange(async (value) => {
 					this.plugin.settings.use_regex_to_check_for_tags = value;
@@ -129,37 +82,8 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 				});
 			});
 
-		const ruleDesc = document.createDocumentFragment();
-		ruleDesc.append(
-			'1. Set the destination folder.',
-			descEl.createEl('br'),
-			'2. Set a tag, frontmatter property key:value or title that matches the note you want to move. ',
-			descEl.createEl('strong', { text: 'You can set either the tag, frontmatter property key:value or the title. ' }),
-			descEl.createEl('br'),
-			'3. The rules are checked in order from the top. The notes will be moved to the folder with the ',
-			descEl.createEl('strong', { text: 'first matching rule.' }),
-			descEl.createEl('br'),
-			'Tag: Be sure to add a',
-			descEl.createEl('strong', { text: ' # ' }),
-			'at the beginning.',
-			descEl.createEl('br'),
-			'FrontmatterProperty: Add frontmatter property key value pair for eg., status: In Progress.',
-			descEl.createEl('br'),
-			'Title: Tested by JavaScript regular expressions.',
-			descEl.createEl('br'),
-			descEl.createEl('br'),
-			'Notice:',
-			descEl.createEl('br'),
-			'1. Attached files will not be moved, but they will still appear in the note.',
-			descEl.createEl('br'),
-			'2. Auto Note Mover will not move notes that have "',
-			descEl.createEl('strong', { text: 'AutoNoteMover: disable' }),
-			'" in the frontmatter.'
-		);
 		new Setting(this.containerEl)
-
 			.setName('Add new rule')
-			.setDesc(ruleDesc)
 			.addButton((button: ButtonComponent) => {
 				button
 					.setTooltip('Add new rule')
@@ -169,7 +93,8 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 						this.plugin.settings.folder_tag_pattern.push({
 							folder: '',
 							tag: '',
-							frontmatterProperty: '',
+							frontmatterPropertyKey: '',
+							frontmatterPropertyValue: '',
 							pattern: '',
 						});
 						await this.plugin.saveSettings();
@@ -180,10 +105,15 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 		this.plugin.settings.folder_tag_pattern.forEach((folder_tag_pattern, index) => {
 			const settings = this.plugin.settings.folder_tag_pattern;
 			const settingTag = settings.map((e) => e['tag']);
-			const settingFrontmatterProperty = settings.map((e) => e['frontmatterProperty']);
 			const settingPattern = settings.map((e) => e['pattern']);
 			const checkArr = (arr: string[], val: string) => {
 				return arr.some((arrVal) => val === arrVal);
+			};
+			const checkKeyValuePair = (key: string, value: string) => {
+				return settings.some((setting) => 
+					setting.frontmatterPropertyKey === key && 
+					setting.frontmatterPropertyValue === value
+				);
 			};
 
 			const s = new Setting(this.containerEl)
@@ -220,17 +150,37 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 				})
 
 				.addSearch((cb) => {
-					cb.setPlaceholder('Frontmatter property')
-						.setValue(folder_tag_pattern.frontmatterProperty)
-						.onChange(async (newFrontmatterProperty) => {
-							if (newFrontmatterProperty && checkArr(settingFrontmatterProperty, newFrontmatterProperty)) {
-								new Notice('This frontmatter property is already used.');
+					new FrontmatterPropertySuggest(this.app, cb.inputEl);
+					cb.setPlaceholder('Property Key')
+						.setValue(folder_tag_pattern.frontmatterPropertyKey)
+						.onChange(async (newFrontmatterPropertyKey) => {
+							this.plugin.settings.folder_tag_pattern[index].frontmatterPropertyKey = newFrontmatterPropertyKey;
+							await this.plugin.saveSettings();
+						});
+				})
+
+				.addSearch((cb) => {
+					const valueSuggest = new FrontmatterValueSuggest(this.app, cb.inputEl, folder_tag_pattern.frontmatterPropertyKey);
+					cb.setPlaceholder('Property Value')
+						.setValue(folder_tag_pattern.frontmatterPropertyValue)
+						.onChange(async (newFrontmatterPropertyValue) => {
+							if (newFrontmatterPropertyValue && 
+								checkKeyValuePair(folder_tag_pattern.frontmatterPropertyKey, newFrontmatterPropertyValue)) {
+								new Notice('This key-value combination is already used.');
 								return;
 							}
 
-							this.plugin.settings.folder_tag_pattern[index].frontmatterProperty = newFrontmatterProperty;
+							this.plugin.settings.folder_tag_pattern[index].frontmatterPropertyValue = newFrontmatterPropertyValue;
 							await this.plugin.saveSettings();
 						});
+
+					// Update value suggestions when property key changes
+					const keyInput = this.containerEl.querySelector(`input[placeholder="Property Key"]`) as HTMLInputElement;
+					if (keyInput) {
+						keyInput.addEventListener('change', () => {
+							valueSuggest.setPropertyName(keyInput.value);
+						});
+					}
 				})
 
 				.addSearch((cb) => {
@@ -297,16 +247,9 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 				});
 			});
 
-		const excludedFolderDesc = document.createDocumentFragment();
-		excludedFolderDesc.append(
-			'Notes in the excluded folder will not be moved.',
-			descEl.createEl('br'),
-			'This takes precedence over the notes movement rules.'
-		);
 		new Setting(this.containerEl)
-
 			.setName('Add Excluded Folder')
-			.setDesc(excludedFolderDesc)
+			.setDesc('Notes in the excluded folder will not be moved.')
 			.addButton((button: ButtonComponent) => {
 				button
 					.setTooltip('Add Excluded Folders')
@@ -366,10 +309,6 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 		const statusBarTriggerIndicatorDesc = document.createDocumentFragment();
 		statusBarTriggerIndicatorDesc.append(
 			'The status bar will display [A] if the trigger is Automatic, and [M] for Manual.',
-			descEl.createEl('br'),
-			'To change the setting, you need to restart Obsidian.',
-			descEl.createEl('br'),
-			'Desktop only.'
 		);
 		new Setting(this.containerEl)
 			.setName('Status Bar Trigger Indicator')
