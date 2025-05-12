@@ -1,1 +1,9 @@
 /* empty */
+
+.auto-note-mover-setting .search-input-container {
+    width: 100%;
+}
+
+.auto-note-mover-setting .search-input-container input {
+    width: 100%;
+}

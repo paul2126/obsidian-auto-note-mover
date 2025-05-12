@@ -116,6 +116,8 @@ export abstract class TextInputSuggest<T> implements ISuggestOwner<T> {
 
 		this.suggestEl = createDiv('suggestion-container');
 		const suggestion = this.suggestEl.createDiv('suggestion');
+		suggestion.style.whiteSpace = 'normal';
+		suggestion.style.wordBreak = 'break-word';
 		this.suggest = new Suggest(this, suggestion, this.scope);
 
 		this.scope.register([], 'Escape', this.close.bind(this));

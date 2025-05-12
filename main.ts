@@ -62,10 +62,13 @@ export default class AutoNoteMover extends Plugin {
 			for (let i = 0; i < settingsLength; i++) {
 				const settingFolder = folderTagPattern[i].folder;
 				const settingTag = folderTagPattern[i].tag;
-				const settingFrontmatterProperty = folderTagPattern[i].frontmatterProperty;
+				const settingPropertyKey = folderTagPattern[i].frontmatterPropertyKey;
+				const settingPropertyValue = folderTagPattern[i].frontmatterPropertyValue;
 				const settingPattern = folderTagPattern[i].pattern;
+				const ruleType = folderTagPattern[i].ruleType;
+
 				// Tag check
-				if (!settingPattern && !settingFrontmatterProperty) {
+				if (ruleType === 'tag' && settingTag) {
 					if (!this.settings.use_regex_to_check_for_tags) {
 						if (cacheTag.find((e) => e === settingTag)) {
 							fileMove(this.app, settingFolder, fileFullName, file);
@@ -78,20 +81,18 @@ export default class AutoNoteMover extends Plugin {
 							break;
 						}
 					}
-					// Title check
-				} else if (!settingTag && !settingFrontmatterProperty) {
+				// Title check
+				} else if (ruleType === 'regex' && settingPattern) {
 					const regex = new RegExp(settingPattern);
 					const isMatch = regex.test(fileName);
 					if (isMatch) {
 						fileMove(this.app, settingFolder, fileFullName, file);
 						break;
 					}
-				} else if (!settingPattern && !settingTag) {
-					const property = settingFrontmatterProperty.split(":")
-					const propertyKey = property[0].trim()
-					const propertyValue = property[1].trim()
-					const fm = parseFrontMatterStringArray(fileCache.frontmatter, propertyKey);
-					if (fm && fm.length > 0 && fm.includes(propertyValue)) {
+				// Property check
+				} else if (ruleType === 'property' && settingPropertyKey && settingPropertyValue && fileCache?.frontmatter) {
+					const fm = parseFrontMatterStringArray(fileCache.frontmatter, settingPropertyKey);
+					if (fm && fm.length > 0 && fm.includes(settingPropertyValue)) {
 						fileMove(this.app, settingFolder, fileFullName, file);
 						break;
 					}
