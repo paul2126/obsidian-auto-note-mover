@@ -26,6 +26,7 @@ export interface AutoNoteMoverSettings {
 	folder_tag_pattern: Array<FolderTagPattern>;
 	use_regex_to_check_for_excluded_folder: boolean;
 	excluded_folder: Array<ExcludedFolder>;
+	show_alerts: boolean;
 }
 
 export const DEFAULT_SETTINGS: AutoNoteMoverSettings = {
@@ -35,6 +36,7 @@ export const DEFAULT_SETTINGS: AutoNoteMoverSettings = {
 	folder_tag_pattern: [{ folder: '', tag: '', frontmatterPropertyKey: '', frontmatterPropertyValue: '', pattern: '', ruleType: '' }],
 	use_regex_to_check_for_excluded_folder: false,
 	excluded_folder: [{ folder: '' }],
+	show_alerts: true,
 };
 
 export class AutoNoteMoverSettingTab extends PluginSettingTab {
@@ -361,6 +363,21 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.statusBar_trigger_indicator).onChange(async (value) => {
 					this.plugin.settings.statusBar_trigger_indicator = value;
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			});
+		
+		const showAlertsDesc = document.createDocumentFragment();
+		showAlertsDesc.append(
+			'If enabled, displays alerts when notes are moved. Disable to hide these notifications.'
+		);
+		new Setting(this.containerEl)
+			.setName('Show Alerts')
+			.setDesc(showAlertsDesc)
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.show_alerts).onChange(async (value) => {
+					this.plugin.settings.show_alerts = value;
 					await this.plugin.saveSettings();
 					this.display();
 				});
