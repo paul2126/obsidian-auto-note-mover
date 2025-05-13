@@ -178,12 +178,15 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 						cb.setPlaceholder('Property Value')
 							.setValue(folder_tag_pattern.frontmatterPropertyValue)
 							.onChange(async (newFrontmatterPropertyValue) => {
+								if(newFrontmatterPropertyValue == folder_tag_pattern.frontmatterPropertyValue) {
+									return;
+								}
 								if (newFrontmatterPropertyValue && 
 									checkKeyValuePair(folder_tag_pattern.frontmatterPropertyKey, newFrontmatterPropertyValue)) {
 									new Notice('This key-value combination is already used.');
 									return;
 								}
-	
+
 								this.plugin.settings.folder_tag_pattern[index].frontmatterPropertyValue = newFrontmatterPropertyValue;
 								await this.plugin.saveSettings();
 							});
