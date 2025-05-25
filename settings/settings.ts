@@ -194,7 +194,7 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 							});
 	
 						// Update value suggestions when property key changes
-						const keyInput = this.containerEl.querySelector(`input[placeholder="Property Key"]`) as HTMLInputElement;
+						const keyInput = lastSetting.controlEl.querySelector(`input[placeholder="Property Key"]`) as HTMLInputElement;
 						if (keyInput) {
 							['change', 'input', 'click', 'search'].forEach(event => {
 								keyInput.addEventListener(event, () => {
