@@ -295,12 +295,12 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(this.containerEl)
-			.setName('Add Excluded Folder')
-			.setDesc('Notes in the excluded folder will not be moved.')
+			.setName('Excluded Folders')
+			.setDesc('Notes in the excluded folders will not be moved.')
 			.addButton((button: ButtonComponent) => {
 				button
 					.setTooltip('Add Excluded Folders')
-					.setButtonText('+')
+					.setButtonText('Add Folder')
 					.setCta()
 					.onClick(async () => {
 						this.plugin.settings.excluded_folder.push({
@@ -313,6 +313,7 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 
 		this.plugin.settings.excluded_folder.forEach((excluded_folder, index) => {
 			const s = new Setting(this.containerEl)
+				.setClass('auto-note-mover-setting')
 				.addSearch((cb) => {
 					new FolderSuggest(this.app, cb.inputEl);
 					cb.setPlaceholder('Folder')
