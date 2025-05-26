@@ -29,7 +29,7 @@ const isTFExists = (app: App, path: string, F: typeof TFile | typeof TFolder) =>
 	}
 };
 
-export const fileMove = async (app: App, settingFolder: string, fileFullName: string, file: TFile, showAlert: boolean = true) => {
+export const fileMove = async (app: App, settingFolder: string, fileFullName: string, file: TFile, showAlert: boolean = true, autoCreateFolders: boolean = false) => {
 	// Does the destination folder exist?
 	if (!isTFExists(app, settingFolder, TFolder)) {
 		console.error(`[Auto Note Mover] The destination folder "${settingFolder}" does not exist.`);
@@ -47,15 +47,31 @@ export const fileMove = async (app: App, settingFolder: string, fileFullName: st
 		);
 		return;
 	}
+
 	// Is the destination folder the same path as the current folder?
 	if (newPath === file.path) {
 		return;
 	}
+
 	// Move file
 	await app.fileManager.renameFile(file, newPath);
 	console.log(`[Auto Note Mover] Moved the note "${fileFullName}" to the "${settingFolder}".`);
 	if (showAlert) {
 		new Notice(`[Auto Note Mover]\nMoved the note "${fileFullName}"\nto the "${settingFolder}".`);
+	}
+
+	if(autoCreateFolders) {
+		const newFolderPath = normalizePath(settingFolder + '/' + fileFullName.replace('.md', ''));
+		if(!isTFExists(app, newFolderPath, TFolder)) {
+			await app.vault.createFolder(newFolderPath);
+			console.log(`[Auto Note Mover] Created folder "${newFolderPath}".`);
+		} else {
+			if (showAlert) {
+				new Notice(`[Auto Note Mover]\nFolder ${newFolderPath} already exists.`);
+			} else {
+				console.error(`[Auto Note Mover]\nFolder ${newFolderPath} already exists.`);
+			}
+		}
 	}
 };
 

@@ -71,13 +71,13 @@ export default class AutoNoteMover extends Plugin {
 				if (ruleType === 'tag' && settingTag) {
 					if (!this.settings.use_regex_to_check_for_tags) {
 						if (cacheTag.find((e) => e === settingTag)) {
-							fileMove(this.app, settingFolder, fileFullName, file, this.settings.show_alerts);
+							fileMove(this.app, settingFolder, fileFullName, file, this.settings.show_alerts, this.settings.auto_create_folders);
 							break;
 						}
 					} else if (this.settings.use_regex_to_check_for_tags) {
 						const regex = new RegExp(settingTag);
 						if (cacheTag.find((e) => regex.test(e))) {
-							fileMove(this.app, settingFolder, fileFullName, file, this.settings.show_alerts);
+							fileMove(this.app, settingFolder, fileFullName, file, this.settings.show_alerts, this.settings.auto_create_folders);
 							break;
 						}
 					}
@@ -86,14 +86,14 @@ export default class AutoNoteMover extends Plugin {
 					const regex = new RegExp(settingPattern);
 					const isMatch = regex.test(fileName);
 					if (isMatch) {
-						fileMove(this.app, settingFolder, fileFullName, file, this.settings.show_alerts);
+						fileMove(this.app, settingFolder, fileFullName, file, this.settings.show_alerts, this.settings.auto_create_folders);
 						break;
 					}
 				// Property check
 				} else if (ruleType === 'property' && settingPropertyKey && settingPropertyValue && fileCache?.frontmatter) {
 					const fm = parseFrontMatterStringArray(fileCache.frontmatter, settingPropertyKey);
 					if (fm && fm.length > 0 && fm.includes(settingPropertyValue)) {
-						fileMove(this.app, settingFolder, fileFullName, file, this.settings.show_alerts);
+						fileMove(this.app, settingFolder, fileFullName, file, this.settings.show_alerts, this.settings.auto_create_folders);
 						break;
 					}
 				}
