@@ -87,7 +87,7 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 					.setButtonText('Add Property Rule')
 					.setCta()
 					.onClick(async () => {
-						this.plugin.settings.folder_tag_pattern.push({
+						this.plugin.settings.folder_tag_pattern.unshift({
 							folder: '',
 							tag: '',
 							frontmatterPropertyKey: '',
