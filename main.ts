@@ -146,7 +146,7 @@ export default class AutoNoteMover extends Plugin {
 					// Title check
 				} else if (ruleType === "regex" && settingPattern) {
 					const regex = new RegExp(settingPattern);
-					const isMatch = regex.test(fileName);
+					const isMatch = regex.test(fileFullName);
 					if (isMatch) {
 						await retryWithDelay(() =>
 							fileMove(
